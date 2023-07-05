@@ -33,6 +33,7 @@ class GG1Queue:
             For EXPONENTIAL: scale (mean or 1/lambda)
             For WEIBULL: a (shape)
             For UNIFORM: low (lower boundary), high (upper boundary)
+            For HAWKES: mu (mean), alpha (shape), beta (scale)
     """
     
     def __init__(self, tot_arrivals:int, service_pdf:PDF, arrival_pdf:PDF, service_kwargs={}, arrival_kwargs={}):
@@ -44,18 +45,19 @@ class GG1Queue:
         self.arrival_kwargs = arrival_kwargs #Additional arguments for the arrival pdf.
         self.time_series = [] # stores tuple (time, queue_length) to track the queue length over time.
         self.wait_time = [] # when_serviced - when_arrived
-        # initialize the next arrival and service time
-        self.next_arrival_time = self._get_arrival_time()
-        self.next_service_time = self.next_arrival_time + self._get_service_time()
         # saving previous values for non iid process (like hawkes)
         self.generated_arrivals = []
         self.generated_services = []
-
+        # initialize the next arrival and service time
+        self.next_arrival_time = self._get_arrival_time()
+        self.next_service_time = self.next_arrival_time + self._get_service_time()
+       
+        
     def _simulate_hawkes_process(self, mu, alpha, beta, num_events):
         current_time = 0
         event_times = []  # list to store event times
         while len(event_times) < num_events:
-            thinning_rate = mu + alpha / beta * sum(np.exp(-beta * (current_time - event_times)))
+            thinning_rate = mu + alpha / beta * sum(np.exp(-beta * (current_time - np.array(event_times))))
             random_var_1 = np.random.rand()
             inter_event_time = -np.log(random_var_1) / thinning_rate
             current_time += inter_event_time
@@ -63,17 +65,17 @@ class GG1Queue:
             actual_rate = mu + alpha * sum(np.exp(-beta * (current_time - event_times)))
             if random_var_2 <= actual_rate / thinning_rate:
                 event_times.append(current_time)
-        return np.array(event_times)
+        return event_times
 
     
     def _get_hawkes_time(self, kind, **kwargs):
         if kind == 'arrival':
             if not self.generated_arrivals:
-                self.generated_arrivals = _simulate_hawkes_process(**kwargs, num_events=self.tot_arrivals)
+                self.generated_arrivals = self._simulate_hawkes_process(**kwargs, num_events=self.tot_arrivals)
             return self.generated_arrivals.pop(0)
         elif kind == 'service':
             if not self.generated_services:
-                self.generated_services = _simulate_hawkes_process(**kwargs, num_events=self.tot_arrivals)
+                self.generated_services = self._simulate_hawkes_process(**kwargs, num_events=self.tot_arrivals)
             return self.generated_services.pop(0)
 
 
