@@ -35,9 +35,10 @@ class GG1Queue:
             For UNIFORM: low (lower boundary), high (upper boundary)
             For HAWKES: mu (mean), alpha (shape), beta (scale)
     """
-    #TODO 1: verify hawkes
+    #TODO 1: verify hawkes, add progress bar
     # TODO 3: verify custom
     # TODO 2: mm1 unit test
+
     def __init__(self, tot_arrivals:int, service_pdf:PDF, arrival_pdf:PDF, service_kwargs={}, arrival_kwargs={}):
         self.queue = deque()
         self.tot_arrivals = int(tot_arrivals)
@@ -158,7 +159,7 @@ class GG1Queue:
 
     def get_queue_stats(self):
         """get queue stats"""
-        # TODO 4: average queue length (steady state reaches?)
+        # TODO 4: average queue length (steady state reaches? point after which wait time stops increasing?)
         _, queue_lengths = zip(*self.time_series)
         max_queue_len = max(queue_lengths)
         avg_wait_time = np.mean(self.wait_time)
