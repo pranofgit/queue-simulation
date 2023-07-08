@@ -33,10 +33,9 @@ class GG1Queue:
             For EXPONENTIAL: scale (mean or 1/lambda)
             For WEIBULL: a (shape)
             For UNIFORM: low (lower boundary), high (upper boundary)
-            For HAWKES: mu (mean), alpha (shape), beta (scale)
+            For HAWKES: mu (mean), alpha (excitation), beta (decay) [keep alpha less than beta]
     """
-    #TODO 1: verify hawkes, add progress bar
-    # TODO 3: verify custom
+    #TODO 1: verify hawkes
     # TODO 2: mm1 unit test
 
     def __init__(self, tot_arrivals:int, service_pdf:PDF, arrival_pdf:PDF, service_kwargs={}, arrival_kwargs={}):
@@ -61,12 +60,11 @@ class GG1Queue:
         event_times = []  # list to store event times
         while len(event_times) < num_events:
             thinning_rate = mu + alpha / beta * sum(np.exp(-beta * (current_time - np.array(event_times))))
-            random_var_1 = np.random.rand()
-            inter_event_time = -np.log(random_var_1) / thinning_rate
+            inter_event_time = np.random.exponential(1 / thinning_rate) # expo var
             current_time += inter_event_time
-            random_var_2 = np.random.rand()
-            actual_rate = mu + alpha * sum(np.exp(-beta * (current_time - event_times)))
-            if random_var_2 <= actual_rate / thinning_rate:
+            uni_var = np.random.rand() # for thinning
+            actual_rate = mu + alpha * sum(np.exp(-beta * (current_time - np.array(event_times))))
+            if uni_var <= actual_rate / thinning_rate:
                 event_times.append(current_time)
         return event_times
 
