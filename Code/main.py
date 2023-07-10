@@ -1,3 +1,14 @@
+'''
+Filename: c:\Users\prano\OneDrive\Documents\GitHub\queue-simulation\Code\main.py
+Path: c:\Users\prano\OneDrive\Documents\GitHub\queue-simulation\Code
+Created Date: Wednesday, June 28th 2023, 12:18:46 pm
+Author: pranofgit
+
+Copyright (c) 2023 Your Company
+'''
+
+
+
 from gg1 import GG1Queue, PDF
 
 # Example usage:

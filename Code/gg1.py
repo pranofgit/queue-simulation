@@ -29,14 +29,13 @@ class GG1Queue:
 
     kwargs : dict
         Additional arguments for the pdfs. These can be:
-            For NORMAL: loc (mean), scale (standard deviation)
+            For NORMAL: loc (mean), scale (standard deviation) [only positive values are returned]
             For EXPONENTIAL: scale (mean or 1/lambda)
             For WEIBULL: a (shape)
             For UNIFORM: low (lower boundary), high (upper boundary)
             For HAWKES: mu (mean), alpha (excitation), beta (decay) [keep alpha less than beta]
     """
-    #TODO 1: verify hawkes
-    # TODO 2: mm1 unit test
+    
 
     def __init__(self, tot_arrivals:int, service_pdf:PDF, arrival_pdf:PDF, service_kwargs={}, arrival_kwargs={}):
         self.queue = deque()
@@ -58,15 +57,17 @@ class GG1Queue:
     def _simulate_hawkes_process(self, mu, alpha, beta, num_events):
         current_time = 0
         event_times = []  # list to store event times
+        inter_event_times = []
         while len(event_times) < num_events:
             thinning_rate = mu + alpha / beta * sum(np.exp(-beta * (current_time - np.array(event_times))))
             inter_event_time = np.random.exponential(1 / thinning_rate) # expo var
             current_time += inter_event_time
             uni_var = np.random.rand() # for thinning
-            actual_rate = mu + alpha * sum(np.exp(-beta * (current_time - np.array(event_times))))
+            actual_rate = mu + alpha * sum(np.exp(-beta * (current_time - np.array(event_times) )))
             if uni_var <= actual_rate / thinning_rate:
                 event_times.append(current_time)
-        return event_times
+                inter_event_times.append(inter_event_time)
+        return inter_event_times
 
     
     def _get_hawkes_time(self, kind, **kwargs):
@@ -90,7 +91,7 @@ class GG1Queue:
 
     def _get_service_time(self):
         if self.service_pdf == PDF.NORMAL:
-            return np.random.normal(**self.service_kwargs)
+            return np.abs(np.random.normal(**self.service_kwargs))
         elif self.service_pdf == PDF.EXPONENTIAL:
             return np.random.exponential(**self.service_kwargs)
         elif self.service_pdf == PDF.WEIBULL:
@@ -106,7 +107,7 @@ class GG1Queue:
 
     def _get_arrival_time(self):
         if self.arrival_pdf == PDF.NORMAL:
-            return np.random.normal(**self.arrival_kwargs)
+            return np.abs(np.random.normal(**self.arrival_kwargs))
         elif self.arrival_pdf == PDF.EXPONENTIAL:
             return np.random.exponential(**self.arrival_kwargs)
         elif self.arrival_pdf == PDF.WEIBULL:
