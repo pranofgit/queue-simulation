@@ -58,15 +58,19 @@ class GG1Queue:
         current_time = 0
         event_times = []  # list to store event times
         inter_event_times = []
+        skipped_inter_event_time = 0
         while len(event_times) < num_events:
             thinning_rate = mu + alpha / beta * sum(np.exp(-beta * (current_time - np.array(event_times))))
             inter_event_time = np.random.exponential(1 / thinning_rate) # expo var
             current_time += inter_event_time
             uni_var = np.random.rand() # for thinning
             actual_rate = mu + alpha * sum(np.exp(-beta * (current_time - np.array(event_times) )))
-            if uni_var <= actual_rate / thinning_rate:
+            if uni_var <= actual_rate / thinning_rate: # if the event is accepted or not
                 event_times.append(current_time)
-                inter_event_times.append(inter_event_time)
+                inter_event_times.append(inter_event_time + skipped_inter_event_time)
+                skipped_inter_event_time = 0
+            else:
+                skipped_inter_event_time += inter_event_time
         return inter_event_times
 
     
